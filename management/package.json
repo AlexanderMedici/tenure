@@ -1,0 +1,17 @@
+{
+  "name": "tenure",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm:server\" \"npm:client\"",
+    "server": "npm --prefix backend run dev",
+    "client": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix backend run start",
+    "data:import": "npm --prefix backend run data:import",
+    "data:destroy": "npm --prefix backend run data:destroy"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

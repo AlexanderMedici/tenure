@@ -1,0 +1,62 @@
+import { useEffect, useState } from "react";
+import SectionHeader from "../../components/SectionHeader";
+import { apiFetch, withBuildingId } from "../../app/api";
+import ListSkeleton from "../../components/ListSkeleton";
+import { useAuth } from "../../app/auth";
+
+export default function ResidentDashboard() {
+  const [state, setState] = useState({ loading: true, error: null, data: null });
+  const { scope } = useAuth();
+
+  useEffect(() => {
+    let active = true;
+    apiFetch(withBuildingId("/api/dashboard", scope?.buildingId))
+      .then((data) => {
+        if (active) setState({ loading: false, error: null, data: data.data });
+      })
+      .catch((err) => {
+        if (active) setState({ loading: false, error: err.message, data: null });
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Dashboard"
+        subtitle="A calm overview of your building activity."
+      />
+
+      {state.loading ? (
+        <ListSkeleton count={2} />
+      ) : state.error ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
+          {state.error}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {[
+            { label: "Announcements", value: state.data?.announcements },
+            { label: "Threads", value: state.data?.threads },
+            { label: "Open Tickets", value: state.data?.openTickets },
+            { label: "Open Invoices", value: state.data?.openInvoices },
+          ].map((metric) => (
+            <div
+              key={metric.label}
+              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(36,34,30,0.06)]"
+            >
+              <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                {metric.label}
+              </div>
+              <div className="mt-3 text-3xl font-semibold text-slate-900">
+                {metric.value ?? 0}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

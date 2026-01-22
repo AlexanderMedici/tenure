@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+
+  /* TENURE Quiet Luxury tokens */
+  --bg-sand: #f6f2ea;
+  --bg-stone: #efebe2;
+  --bg-paper: #fbfaf7;
+  --text-charcoal: #2a2a27;
+  --text-muted: #5c5a54;
+  --line-soft: #e6e0d6;
+  --line-strong: #d6cfc3;
+  --accent-gold: #b79b62;
+  --accent-gold-dark: #9b8455;
+
+  --surface-1: #ffffff;
+  --surface-2: #fdfbf6;
+  --surface-3: #f7f2e8;
+
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  --shadow-soft: 0 12px 30px rgba(36, 34, 30, 0.06);
+  --shadow-card: 0 8px 24px rgba(36, 34, 30, 0.08);
+
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  --font-sans: "Space Grotesk", system-ui, sans-serif;
+  --font-serif: "Spectral", "Iowan Old Style", "Times New Roman", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg-sand);
+  color: var(--text-charcoal);
+  line-height: 1.6;
+  letter-spacing: 0.005em;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  letter-spacing: 0.01em;
+  margin: 0 0 var(--space-4);
+}
+
+p {
+  margin: 0 0 var(--space-4);
+  color: var(--text-muted);
+}
+
+/* Component styling primitives */
+.tenure-card {
+  background: var(--surface-1);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-8);
+}
+
+.tenure-tab {
+  display: inline-flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 0.95rem;
+}
+
+.tenure-tab button {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tenure-tab button[aria-selected="true"] {
+  color: var(--text-charcoal);
+  border-color: var(--accent-gold);
+}
+
+.tenure-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.tenure-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--bg-stone);
+  color: var(--text-charcoal);
+  border: 1px solid var(--line-soft);
+}
+
+.tenure-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--text-charcoal);
+  color: #ffffff;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tenure-btn.secondary {
+  background: transparent;
+  color: var(--text-charcoal);
+  border-color: var(--line-strong);
+}
+
+.tenure-input {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+  color: var(--text-charcoal);
+}
+
+.tenure-input:focus {
+  outline: none;
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px rgba(183, 155, 98, 0.18);
+}
+
+.tenure-empty {
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-12);
+  text-align: center;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
