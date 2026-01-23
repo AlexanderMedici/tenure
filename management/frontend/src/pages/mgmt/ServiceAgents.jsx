@@ -15,8 +15,8 @@ const ROLE_OPTIONS = [
 ];
 
 export default function ServiceAgents() {
-  const { scope } = useAuth();
-  const buildingId = scope?.buildingId || scope?.buildingIds?.[0];
+  const { activeBuildingId } = useAuth();
+  const buildingId = activeBuildingId;
   const [filters, setFilters] = useState({ q: "", role: "", status: "" });
   const [form, setForm] = useState({
     name: "",

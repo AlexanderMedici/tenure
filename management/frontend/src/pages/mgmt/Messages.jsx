@@ -8,11 +8,12 @@ import { useAuth } from "../../app/auth";
 
 export default function MgmtMessages() {
   const [state, setState] = useState({ loading: true, error: null, data: [] });
-  const { scope } = useAuth();
+  const { activeBuildingId } = useAuth();
 
   useEffect(() => {
     let active = true;
-    apiFetch(withBuildingId("/api/threads", scope?.buildingId || scope?.buildingIds?.[0]))
+    if (!activeBuildingId) return () => {};
+    apiFetch(withBuildingId("/api/threads", activeBuildingId))
       .then((data) => {
         if (active) setState({ loading: false, error: null, data: data.data });
       })
@@ -22,7 +23,7 @@ export default function MgmtMessages() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeBuildingId]);
 
   return (
     <div className="space-y-6">

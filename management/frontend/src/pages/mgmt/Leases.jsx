@@ -6,12 +6,13 @@ import { apiFetch, withBuildingId } from "../../app/api";
 import { useAuth } from "../../app/auth";
 
 export default function MgmtLeases() {
-  const { scope } = useAuth();
-  const buildingId = scope?.buildingId || scope?.buildingIds?.[0];
+  const { activeBuildingId } = useAuth();
+  const buildingId = activeBuildingId;
   const [state, setState] = useState({ loading: true, error: null, data: [] });
 
   useEffect(() => {
     let active = true;
+    if (!buildingId) return () => {};
     apiFetch(withBuildingId("/api/leases", buildingId))
       .then((data) => {
         if (active) setState({ loading: false, error: null, data: data.data });
@@ -30,6 +31,18 @@ export default function MgmtLeases() {
     resident: lease.residentId?.name || lease.residentId?.email || "-",
     start: new Date(lease.startDate).toLocaleDateString(),
     status: lease.status,
+    document: lease.document?.url ? (
+      <a
+        className="text-emerald-700 underline"
+        href={lease.document.url}
+        target="_blank"
+        rel="noreferrer"
+      >
+        View
+      </a>
+    ) : (
+      "-"
+    ),
   }));
 
   return (
@@ -50,7 +63,8 @@ export default function MgmtLeases() {
             { key: "unit", label: "Unit", className: "md:col-span-3" },
             { key: "resident", label: "Resident", className: "md:col-span-5" },
             { key: "start", label: "Start", className: "md:col-span-2" },
-            { key: "status", label: "Status", className: "md:col-span-2" },
+            { key: "status", label: "Status", className: "md:col-span-1" },
+            { key: "document", label: "PDF", className: "md:col-span-1" },
           ]}
           rows={rows}
           emptyLabel="No leases found."

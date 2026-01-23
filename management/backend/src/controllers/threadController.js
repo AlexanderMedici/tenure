@@ -19,7 +19,12 @@ const toAttachments = (files = []) =>
 
 export const listThreads = async (req, res, next) => {
   try {
-    const filter = await tenantScope(req, {}, { action: "list_threads" });
+    const filter = await tenantScope(req, {}, {
+      action: "list_threads",
+      residentField: "residentId",
+      unitField: "unitId",
+      leaseField: "residentId",
+    });
     const threads = await Thread.find(filter).sort({
       lastMessageAt: -1,
       updatedAt: -1,
@@ -34,6 +39,9 @@ export const listThreadMessages = async (req, res, next) => {
   try {
     const threadFilter = await tenantScope(req, {}, {
       action: "list_thread_messages",
+      residentField: "residentId",
+      unitField: "unitId",
+      leaseField: "residentId",
     });
 
     const thread = await Thread.findOne({
@@ -60,6 +68,9 @@ export const createThreadMessage = async (req, res, next) => {
 
     const threadFilter = await tenantScope(req, {}, {
       action: "create_thread_message",
+      residentField: "residentId",
+      unitField: "unitId",
+      leaseField: "residentId",
     });
 
     const thread = await Thread.findOne({
@@ -80,6 +91,48 @@ export const createThreadMessage = async (req, res, next) => {
     await thread.save();
 
     res.status(201).json({ success: true, data: message });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const createThread = async (req, res, next) => {
+  try {
+    const { subject, body, residentId, unitId } = req.body || {};
+    if (!body) throw httpError(400, "Message body required");
+
+    const filter = await tenantScope(req, {}, {
+      action: "create_thread",
+      residentField: "residentId",
+      unitField: "unitId",
+      leaseField: "residentId",
+    });
+
+    const payload = {
+      ...filter,
+      subject,
+      status: "open",
+    };
+
+    if (req.user.role === "resident") {
+      payload.residentId = req.user._id;
+      payload.unitId = req.user.unitId;
+    } else {
+      payload.residentId = residentId;
+      payload.unitId = unitId;
+    }
+
+    const thread = await Thread.create(payload);
+    const message = await Message.create({
+      buildingId: filter.buildingId,
+      threadId: thread._id,
+      senderId: req.user._id,
+      body,
+    });
+    thread.lastMessageAt = new Date();
+    await thread.save();
+
+    res.status(201).json({ success: true, data: { thread, message } });
   } catch (err) {
     next(err);
   }

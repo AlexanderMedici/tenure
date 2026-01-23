@@ -16,13 +16,13 @@ export default function MgmtBilling() {
     leaseId: "",
   });
   const [files, setFiles] = useState([]);
-  const { scope } = useAuth();
+  const { activeBuildingId } = useAuth();
+  const buildingId = activeBuildingId;
 
   useEffect(() => {
     let active = true;
-    apiFetch(
-      withBuildingId("/api/invoices", scope?.buildingId || scope?.buildingIds?.[0])
-    )
+    if (!buildingId) return () => {};
+    apiFetch(withBuildingId("/api/invoices", buildingId))
       .then((data) => {
         if (active) setState({ loading: false, error: null, data: data.data });
       })
@@ -32,13 +32,16 @@ export default function MgmtBilling() {
     return () => {
       active = false;
     };
-  }, [scope?.buildingId, scope?.buildingIds]);
+  }, [buildingId]);
 
   const createInvoice = async (event) => {
     event.preventDefault();
     try {
+      if (!buildingId) {
+        throw new Error("Select a building to continue.");
+      }
       const formData = new FormData();
-      const payload = withBuildingIdBody(form, scope?.buildingId || scope?.buildingIds?.[0]);
+      const payload = withBuildingIdBody(form, buildingId);
       Object.entries(payload).forEach(([key, value]) => {
         if (value) formData.append(key, value);
       });
@@ -51,8 +54,22 @@ export default function MgmtBilling() {
       setForm({ amount: "", dueDate: "", residentId: "", unitId: "", leaseId: "" });
       setFiles([]);
       const data = await apiFetch(
-        withBuildingId("/api/invoices", scope?.buildingId || scope?.buildingIds?.[0])
+        withBuildingId("/api/invoices", buildingId)
       );
+      setState({ loading: false, error: null, data: data.data });
+    } catch (err) {
+      setState((prev) => ({ ...prev, error: err.message }));
+    }
+  };
+
+  const removeInvoice = async (id) => {
+    if (!buildingId) return;
+    if (!confirm("Delete this invoice?")) return;
+    try {
+      await apiFetch(withBuildingId(`/api/invoices/${id}`, buildingId), {
+        method: "DELETE",
+      });
+      const data = await apiFetch(withBuildingId("/api/invoices", buildingId));
       setState({ loading: false, error: null, data: data.data });
     } catch (err) {
       setState((prev) => ({ ...prev, error: err.message }));
@@ -83,6 +100,23 @@ export default function MgmtBilling() {
       </div>
     ) : (
       <span className="text-xs text-slate-400">None</span>
+    ),
+    actions: (
+      <div className="flex flex-wrap gap-2">
+        <a
+          className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50"
+          href={withBuildingId(`/api/invoices/${invoice._id}/download`, buildingId)}
+        >
+          Download
+        </a>
+        <button
+          type="button"
+          className="rounded-full border border-rose-200 px-3 py-1 text-xs text-rose-700 hover:bg-rose-50"
+          onClick={() => removeInvoice(invoice._id)}
+        >
+          Delete
+        </button>
+      </div>
     ),
   }));
 
@@ -154,8 +188,9 @@ export default function MgmtBilling() {
             {
               key: "attachments",
               label: "Attachments",
-              className: "md:col-span-6",
+              className: "md:col-span-4",
             },
+            { key: "actions", label: "Actions", className: "md:col-span-2" },
           ]}
           rows={rows}
           emptyLabel="No invoices yet."

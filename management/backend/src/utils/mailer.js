@@ -1,42 +1,48 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-let cachedTransporter = null;
-let cachedPreviewUrl = null;
+let cachedClient = null;
 
-const buildTransporter = async () => {
-  if (process.env.NODE_ENV === "production") {
-    const port = Number(process.env.SMTP_PORT || 465);
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port,
-      secure: port === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+const getClient = () => {
+  if (!cachedClient) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error("RESEND_API_KEY is not configured");
+    }
+    cachedClient = new Resend(apiKey);
   }
-
-  const testAccount = await nodemailer.createTestAccount();
-  cachedPreviewUrl = `https://ethereal.email/messages`;
-  return nodemailer.createTransport({
-    host: testAccount.smtp.host,
-    port: testAccount.smtp.port,
-    secure: testAccount.smtp.secure,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass,
-    },
-  });
+  return cachedClient;
 };
 
-export const getMailer = async () => {
-  if (!cachedTransporter) {
-    cachedTransporter = await buildTransporter();
+export const sendEmail = async ({
+  from,
+  to,
+  bcc,
+  subject,
+  text,
+  html,
+  replyTo,
+  attachments,
+}) => {
+  const client = getClient();
+  const payload = {
+    from: from || process.env.RESEND_FROM || "no-reply@tenure.local",
+    to,
+    bcc,
+    subject,
+    text,
+    html,
+  };
+  if (replyTo) {
+    payload.replyTo = replyTo;
   }
-  return cachedTransporter;
+  if (attachments?.length) {
+    payload.attachments = attachments;
+  }
+  const { data, error } = await client.emails.send(payload);
+  if (error) {
+    const err = new Error(error.message || "Email send failed");
+    err.details = error;
+    throw err;
+  }
+  return data;
 };
-
-export const getPreviewUrl = (info) => nodemailer.getTestMessageUrl(info);
-
-export const getPreviewInboxUrl = () => cachedPreviewUrl;

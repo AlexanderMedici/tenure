@@ -6,6 +6,8 @@ const AuthContext = createContext({
   user: null,
   loading: true,
   refresh: async () => {},
+  activeBuildingId: null,
+  setActiveBuildingId: () => {},
 });
 
 const normalizeUser = (data) => {
@@ -22,6 +24,7 @@ export const getHomeForRole = (role) => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeBuildingId, setActiveBuildingIdState] = useState(null);
 
   const refresh = async () => {
     try {
@@ -44,6 +47,30 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      setActiveBuildingIdState(null);
+      return;
+    }
+    const buildingIds = user.buildingIds || [];
+    const stored = window.localStorage.getItem("management.buildingId");
+    if (stored && buildingIds.includes(stored)) {
+      setActiveBuildingIdState(stored);
+      return;
+    }
+    const fallback = user.buildingId || buildingIds[0] || null;
+    setActiveBuildingIdState(fallback);
+  }, [user]);
+
+  const setActiveBuildingId = (buildingId) => {
+    if (!user) return;
+    const buildingIds = user.buildingIds || [];
+    if (buildingId && buildingIds.includes(buildingId)) {
+      window.localStorage.setItem("management.buildingId", buildingId);
+      setActiveBuildingIdState(buildingId);
+    }
+  };
+
   const scope = useMemo(() => {
     if (!user) return null;
     return {
@@ -56,8 +83,15 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   const value = useMemo(
-    () => ({ user, scope, loading, refresh }),
-    [user, scope, loading]
+    () => ({
+      user,
+      scope,
+      loading,
+      refresh,
+      activeBuildingId,
+      setActiveBuildingId,
+    }),
+    [user, scope, loading, activeBuildingId]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

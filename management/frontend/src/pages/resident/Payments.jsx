@@ -4,6 +4,7 @@ import DataTable from "../../components/DataTable";
 import ListSkeleton from "../../components/ListSkeleton";
 import { apiFetch, withBuildingId } from "../../app/api";
 import { useAuth } from "../../app/auth";
+import { notifyInfo } from "../../app/toast";
 
 export default function ResidentPayments() {
   const [state, setState] = useState({ loading: true, error: null, data: [] });
@@ -31,6 +32,18 @@ export default function ResidentPayments() {
       currency: invoice.currency || "USD",
     }),
     status: invoice.status,
+    action:
+      invoice.status === "paid" || invoice.status === "void" ? (
+        <span className="text-slate-400">-</span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => notifyInfo("Payments are coming soon.")}
+          className="rounded-full bg-slate-900 px-3 py-1 text-xs text-white"
+        >
+          Pay
+        </button>
+      ),
   }));
 
   return (
@@ -49,9 +62,10 @@ export default function ResidentPayments() {
       ) : (
         <DataTable
           columns={[
-            { key: "dueDate", label: "Due", className: "md:col-span-4" },
-            { key: "amount", label: "Amount", className: "md:col-span-4" },
-            { key: "status", label: "Status", className: "md:col-span-4" },
+            { key: "dueDate", label: "Due", className: "md:col-span-3" },
+            { key: "amount", label: "Amount", className: "md:col-span-3" },
+            { key: "status", label: "Status", className: "md:col-span-3" },
+            { key: "action", label: "Pay", className: "md:col-span-3" },
           ]}
           rows={rows}
           emptyLabel="No invoices yet."

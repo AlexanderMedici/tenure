@@ -17,6 +17,8 @@ const ticketSchema = new mongoose.Schema(
     unitId: { type: mongoose.Schema.Types.ObjectId, ref: "Unit", index: true },
     title: { type: String, required: true },
     description: { type: String },
+    assignedAgentId: { type: mongoose.Schema.Types.ObjectId, ref: "ServiceAgent" },
+    assignedAgentName: { type: String },
     status: {
       type: String,
       enum: ["open", "in_progress", "resolved", "closed"],
@@ -30,6 +32,10 @@ const ticketSchema = new mongoose.Schema(
       index: true,
     },
     attachments: [attachmentSchema],
+    completionNotes: { type: String },
+    completionAttachments: [attachmentSchema],
+    completedAt: { type: Date },
+    completedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     dueDate: { type: Date, index: true },
   },
   { timestamps: true }

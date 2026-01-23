@@ -15,6 +15,14 @@ const leaseSchema = new mongoose.Schema(
     },
     rentAmount: { type: Number },
     currency: { type: String, default: "USD" },
+    document: {
+      url: { type: String },
+      fileName: { type: String },
+      mimeType: { type: String },
+      size: { type: Number },
+      uploadedAt: { type: Date },
+      uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    },
   },
   { timestamps: true }
 );

@@ -15,6 +15,14 @@ const userSchema = new mongoose.Schema(
     buildingIds: [{ type: String, index: true }],
     unitId: { type: String },
     leaseId: { type: String },
+    profilePhoto: {
+      url: { type: String },
+      fileName: { type: String },
+      mimeType: { type: String },
+      size: { type: Number },
+      uploadedAt: { type: Date },
+    },
+    bio: { type: String, trim: true, maxlength: 500 },
   },
   { timestamps: true }
 );

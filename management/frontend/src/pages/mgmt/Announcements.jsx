@@ -11,14 +11,14 @@ import { useAuth } from "../../app/auth";
 
 export default function MgmtAnnouncements() {
   const [state, setState] = useState({ loading: true, error: null, data: [] });
-  const { scope } = useAuth();
+  const { activeBuildingId } = useAuth();
   const navigate = useNavigate();
+  const buildingId = activeBuildingId;
 
   useEffect(() => {
     let active = true;
-    apiFetch(
-      withBuildingId("/api/announcements", scope?.buildingId || scope?.buildingIds?.[0])
-    )
+    if (!buildingId) return () => {};
+    apiFetch(withBuildingId("/api/announcements", buildingId))
       .then((data) => {
         if (active) setState({ loading: false, error: null, data: data.data });
       })
@@ -28,7 +28,22 @@ export default function MgmtAnnouncements() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [buildingId]);
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this announcement?")) return;
+    try {
+      await apiFetch(withBuildingId(`/api/announcements/${id}`, buildingId), {
+        method: "DELETE",
+      });
+      setState((prev) => ({
+        ...prev,
+        data: prev.data.filter((item) => item._id !== id),
+      }));
+    } catch (err) {
+      setState((prev) => ({ ...prev, error: err.message }));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -53,6 +68,26 @@ export default function MgmtAnnouncements() {
               title={item.title}
               subtitle={item.body}
               status={<StatusPill status={item.status} />}
+              right={
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="h-9 px-3 text-xs"
+                    onClick={() =>
+                      navigate(`/mgmt/announcements/${item._id}/edit`)
+                    }
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-9 px-3 text-xs border-rose-200 text-rose-700 hover:bg-rose-50"
+                    onClick={() => handleDelete(item._id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              }
             />
           ))}
         </div>

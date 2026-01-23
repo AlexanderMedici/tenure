@@ -53,6 +53,12 @@ export const uploadTicketPhotos = createUploader({
   maxSize: 5 * 1024 * 1024,
 });
 
+export const uploadTicketCompletion = createUploader({
+  folder: "tickets",
+  allowed: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
+  maxSize: 10 * 1024 * 1024,
+});
+
 export const uploadMessageAttachments = createUploader({
   folder: "messages",
   allowed: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
@@ -63,6 +69,18 @@ export const uploadInvoiceAttachments = createUploader({
   folder: "invoices",
   allowed: ["image/jpeg", "image/png", "image/webp", "application/pdf"],
   maxSize: 10 * 1024 * 1024,
+});
+
+export const uploadLeaseDocument = createUploader({
+  folder: "leases",
+  allowed: ["application/pdf"],
+  maxSize: 10 * 1024 * 1024,
+});
+
+export const uploadProfilePhoto = createUploader({
+  folder: "profiles",
+  allowed: ["image/jpeg", "image/png", "image/webp"],
+  maxSize: 5 * 1024 * 1024,
 });
 
 export const fileToPublicPath = (file) => {

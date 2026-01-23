@@ -7,7 +7,7 @@ import { useAuth } from "../../app/auth";
 
 export default function AnnouncementNew() {
   const navigate = useNavigate();
-  const { scope } = useAuth();
+  const { activeBuildingId } = useAuth();
   const [form, setForm] = useState({
     title: "",
     body: "",
@@ -19,9 +19,10 @@ export default function AnnouncementNew() {
     event.preventDefault();
     setState({ loading: true, error: null });
     try {
+      if (!activeBuildingId) throw new Error("Select a building to continue.");
       await apiFetch("/api/announcements", {
         method: "POST",
-        body: JSON.stringify(withBuildingIdBody(form, scope?.buildingId)),
+        body: JSON.stringify(withBuildingIdBody(form, activeBuildingId)),
       });
       navigate("/mgmt/announcements", { replace: true });
     } catch (err) {
@@ -61,6 +62,20 @@ export default function AnnouncementNew() {
             onChange={(e) => setForm({ ...form, body: e.target.value })}
             required
           />
+        </div>
+        <div>
+          <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+            Status
+          </label>
+          <select
+            className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+            value={form.status}
+            onChange={(e) => setForm({ ...form, status: e.target.value })}
+          >
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+            <option value="archived">Archived</option>
+          </select>
         </div>
         {state.error ? (
           <div className="rounded-md border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">

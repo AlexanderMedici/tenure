@@ -16,9 +16,20 @@ export const getDashboard = async (req, res, next) => {
         ? await tenantScope(req, {}, { action: "dashboard_resident" })
         : buildingFilter;
 
-    const [announcements, threads, openTickets, openInvoices] =
+    const announcementsFilter = { ...buildingFilter };
+    if (req.user.role === "resident") {
+      const now = new Date();
+      announcementsFilter.status = "published";
+      announcementsFilter.$or = [
+        { publishAt: { $exists: false } },
+        { publishAt: null },
+        { publishAt: { $lte: now } },
+      ];
+    }
+
+    const [announcements, threads, openTickets, openInvoices, recentAnnouncements] =
       await Promise.all([
-        Announcement.countDocuments(buildingFilter),
+        Announcement.countDocuments(announcementsFilter),
         Thread.countDocuments(residentFilter),
         Ticket.countDocuments({
           ...residentFilter,
@@ -28,6 +39,9 @@ export const getDashboard = async (req, res, next) => {
           ...residentFilter,
           status: { $in: ["open", "overdue"] },
         }),
+        Announcement.find(announcementsFilter)
+          .sort({ publishAt: -1, createdAt: -1 })
+          .limit(3),
       ]);
 
     res.json({
@@ -37,6 +51,7 @@ export const getDashboard = async (req, res, next) => {
         threads,
         openTickets,
         openInvoices,
+        recentAnnouncements,
       },
     });
   } catch (err) {

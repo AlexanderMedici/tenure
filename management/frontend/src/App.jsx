@@ -21,12 +21,14 @@ import MgmtMessages from "./pages/mgmt/Messages";
 import MgmtRequests from "./pages/mgmt/Requests";
 import MgmtAnnouncements from "./pages/mgmt/Announcements";
 import AnnouncementNew from "./pages/mgmt/AnnouncementNew";
+import AnnouncementEdit from "./pages/mgmt/AnnouncementEdit";
 import MgmtBilling from "./pages/mgmt/Billing";
 import MgmtBuildings from "./pages/mgmt/Buildings";
 import MgmtUsers from "./pages/mgmt/Users";
 import ServiceAgents from "./pages/mgmt/ServiceAgents";
 import MgmtCommunity from "./pages/mgmt/Community";
 import MgmtLeases from "./pages/mgmt/Leases";
+import MgmtProfile from "./pages/mgmt/Profile";
 import AdminConsole from "./pages/admin/AdminConsole";
 
 export default function App() {
@@ -72,12 +74,17 @@ export default function App() {
             <Route path="/mgmt/requests" element={<MgmtRequests />} />
             <Route path="/mgmt/announcements" element={<MgmtAnnouncements />} />
             <Route path="/mgmt/announcements/new" element={<AnnouncementNew />} />
+            <Route
+              path="/mgmt/announcements/:id/edit"
+              element={<AnnouncementEdit />}
+            />
             <Route path="/mgmt/billing" element={<MgmtBilling />} />
             <Route path="/mgmt/buildings" element={<MgmtBuildings />} />
             <Route path="/mgmt/users" element={<MgmtUsers />} />
             <Route path="/mgmt/service-agents" element={<ServiceAgents />} />
             <Route path="/mgmt/community" element={<MgmtCommunity />} />
             <Route path="/mgmt/leases" element={<MgmtLeases />} />
+            <Route path="/mgmt/profile" element={<MgmtProfile />} />
           </Route>
 
           <Route

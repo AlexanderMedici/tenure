@@ -2,7 +2,9 @@ import Ticket from "../models/Ticket.js";
 import { tenantScope } from "../middleware/tenantScope.js";
 import { fileToPublicPath } from "../config/multer.js";
 import ServiceAgent from "../models/ServiceAgent.js";
-import { getMailer, getPreviewUrl } from "../utils/mailer.js";
+import { sendEmail } from "../utils/mailer.js";
+import fs from "fs/promises";
+import User from "../models/User.js";
 
 const httpError = (status, message) => {
   const err = new Error(message);
@@ -20,7 +22,12 @@ const toAttachments = (files = []) =>
 
 export const listTickets = async (req, res, next) => {
   try {
-    const filter = await tenantScope(req, {}, { action: "list_tickets" });
+    const filter = await tenantScope(req, {}, {
+      action: "list_tickets",
+      residentField: "residentId",
+      unitField: "unitId",
+      leaseField: "residentId",
+    });
     const tickets = await Ticket.find(filter).sort({ createdAt: -1 });
     res.json({ success: true, data: tickets });
   } catch (err) {
@@ -34,7 +41,12 @@ export const createTicket = async (req, res, next) => {
       req.body || {};
     if (!title) throw httpError(400, "Title required");
 
-    const filter = await tenantScope(req, {}, { action: "create_ticket" });
+    const filter = await tenantScope(req, {}, {
+      action: "create_ticket",
+      residentField: "residentId",
+      unitField: "unitId",
+      leaseField: "residentId",
+    });
 
     const payload = {
       ...filter,
@@ -62,25 +74,25 @@ export const createTicket = async (req, res, next) => {
 
     const emails = agents.map((a) => a.email).filter(Boolean);
     if (emails.length) {
-      const transporter = await getMailer();
-      const from = process.env.SMTP_FROM || "TENURE <no-reply@tenure.local>";
-      const info = await transporter.sendMail({
+      const from = process.env.RESEND_FROM || "no-reply@tenure.local";
+      const attachments = await Promise.all(
+        (req.files || []).map(async (file) => ({
+          filename: file.originalname,
+          content: (await fs.readFile(file.path)).toString("base64"),
+        }))
+      );
+      await sendEmail({
         from,
         to: from,
         bcc: emails,
         subject: `[TENURE] New repair request: ${ticket.title}`,
         text: ticket.description || "New repair request submitted.",
         html: `<p>${ticket.description || "New repair request submitted."}</p>`,
-        attachments: (req.files || []).map((file) => ({
-          filename: file.originalname,
-          path: file.path,
-        })),
+        attachments,
       });
-      const previewUrl = getPreviewUrl(info);
       return res.status(201).json({
         success: true,
         data: ticket,
-        meta: previewUrl ? { previewUrl } : undefined,
       });
     }
 
@@ -93,17 +105,115 @@ export const createTicket = async (req, res, next) => {
 export const updateTicket = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const filter = await tenantScope(req, {}, { action: "update_ticket" });
+    const filter = await tenantScope(req, {}, {
+      action: "update_ticket",
+      residentField: "residentId",
+      unitField: "unitId",
+      leaseField: "residentId",
+    });
+    const existing = await Ticket.findOne({ _id: id, ...filter });
+    if (!existing) throw httpError(404, "Ticket not found");
+
+    const update = { ...req.body };
+    if (update.assignedAgentId === "") {
+      update.assignedAgentId = null;
+      update.assignedAgentName = "";
+    }
+    const files = Array.isArray(req.files) ? req.files : req.files ? [req.files] : [];
+    if (files.length) {
+      const completionAttachments = toAttachments(files);
+      update.$push = { completionAttachments: { $each: completionAttachments } };
+    }
+
+    if (update.assignedAgentId) {
+      const agent = await ServiceAgent.findById(update.assignedAgentId);
+      if (agent) {
+        update.assignedAgentName = agent.name;
+      }
+    }
+
+    if (
+      update.status &&
+      update.status !== existing.status &&
+      (update.status === "resolved" || update.status === "closed")
+    ) {
+      update.completedAt = new Date();
+      update.completedBy = req.user?._id;
+    }
 
     const ticket = await Ticket.findOneAndUpdate(
       { _id: id, ...filter },
-      req.body,
+      update,
       { new: true }
     );
 
     if (!ticket) throw httpError(404, "Ticket not found");
 
+    if (
+      update.status &&
+      update.status !== existing.status &&
+      (update.status === "resolved" || update.status === "closed")
+    ) {
+      const resident = await User.findById(ticket.residentId).select("email name");
+      if (resident?.email) {
+        const from = process.env.RESEND_FROM || "no-reply@tenure.local";
+        const agentLabel = ticket.assignedAgentName
+          ? `Assigned agent: ${ticket.assignedAgentName}`
+          : "Assigned agent: -";
+        const completionLabel = ticket.completedAt
+          ? `Completed: ${new Date(ticket.completedAt).toLocaleString()}`
+          : "Completed";
+        const attachmentLinks = (ticket.completionAttachments || [])
+          .map((file) => `<li><a href="${file.url}">${file.fileName || "Attachment"}</a></li>`)
+          .join("");
+        const html = `
+          <p>Your request has been completed.</p>
+          <p><strong>${ticket.title}</strong></p>
+          <p>${agentLabel}<br/>${completionLabel}</p>
+          ${ticket.completionNotes ? `<p>Notes: ${ticket.completionNotes}</p>` : ""}
+          ${
+            attachmentLinks
+              ? `<p>Completion attachments:</p><ul>${attachmentLinks}</ul>`
+              : ""
+          }
+        `;
+        await sendEmail({
+          from,
+          to: resident.email,
+          subject: `[TENURE] Request completed: ${ticket.title}`,
+          text: `Your request has been completed.\n${agentLabel}\n${completionLabel}`,
+          html,
+        });
+      }
+
+      const io = req.app?.get("io");
+      if (io) {
+        io.to(`user:${ticket.residentId}`).emit("ticket:completed", {
+          ticketId: ticket._id,
+          title: ticket.title,
+          status: ticket.status,
+        });
+      }
+    }
+
     res.json({ success: true, data: ticket });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteTicket = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const filter = await tenantScope(req, {}, {
+      action: "delete_ticket",
+      residentField: "residentId",
+      unitField: "unitId",
+      leaseField: "residentId",
+    });
+    const ticket = await Ticket.findOneAndDelete({ _id: id, ...filter });
+    if (!ticket) throw httpError(404, "Ticket not found");
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }

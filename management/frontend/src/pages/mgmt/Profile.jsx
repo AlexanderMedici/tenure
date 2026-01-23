@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../app/auth";
 import SectionHeader from "../../components/SectionHeader";
-import { apiFetch, withBuildingId } from "../../app/api";
-import CardRow from "../../components/CardRow";
-import StatusPill from "../../components/StatusPill";
 
-export default function ResidentProfile() {
-  const { user, refresh, scope } = useAuth();
+export default function MgmtProfile() {
+  const { user, refresh } = useAuth();
   const [file, setFile] = useState(null);
   const [bio, setBio] = useState(user?.bio || "");
   const [uploadState, setUploadState] = useState({
@@ -19,13 +16,8 @@ export default function ResidentProfile() {
     error: null,
     success: null,
   });
-  const [requestsState, setRequestsState] = useState({
-    loading: true,
-    error: null,
-    data: [],
-  });
 
-  const initials = (user?.name || "Resident")
+  const initials = (user?.name || "Manager")
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
@@ -36,28 +28,6 @@ export default function ResidentProfile() {
   useEffect(() => {
     setBio(user?.bio || "");
   }, [user?.bio]);
-
-  useEffect(() => {
-    let active = true;
-    apiFetch(withBuildingId("/api/tickets", scope?.buildingId))
-      .then((data) => {
-        if (active) {
-          setRequestsState({
-            loading: false,
-            error: null,
-            data: data.data,
-          });
-        }
-      })
-      .catch((err) => {
-        if (active) {
-          setRequestsState({ loading: false, error: err.message, data: [] });
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [scope?.buildingId]);
 
   const handleUpload = async (event) => {
     event.preventDefault();
@@ -74,14 +44,11 @@ export default function ResidentProfile() {
     try {
       const formData = new FormData();
       formData.append("photo", file);
-      const res = await fetch(
-        withBuildingId("/api/users/me/photo", scope?.buildingId),
-        {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        }
-      );
+      const res = await fetch("/api/users/me/photo", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
 
       const contentType = res.headers.get("content-type") || "";
       const payload = contentType.includes("application/json")
@@ -112,7 +79,7 @@ export default function ResidentProfile() {
     event.preventDefault();
     setBioState({ loading: true, error: null, success: null });
     try {
-      const res = await fetch(withBuildingId("/api/users/me", scope?.buildingId), {
+      const res = await fetch("/api/users/me", {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -143,7 +110,7 @@ export default function ResidentProfile() {
     <div className="space-y-6">
       <SectionHeader
         title="Profile"
-        subtitle="Manage your contact and notification settings."
+        subtitle="Manage your account details and profile."
       />
       <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-6">
         <div className="flex items-center gap-4">
@@ -190,7 +157,7 @@ export default function ResidentProfile() {
           <div className="mt-4 space-y-3 text-sm text-slate-700">
             <div>
               <span className="text-slate-500">Name</span>
-              <div className="text-slate-900">{user?.name || "Resident"}</div>
+              <div className="text-slate-900">{user?.name || "Manager"}</div>
             </div>
             <div>
               <span className="text-slate-500">Email</span>
@@ -211,7 +178,7 @@ export default function ResidentProfile() {
             rows={4}
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            placeholder="Tell us a bit about yourself..."
+            placeholder="Tell residents about yourself..."
           />
           {bioState.error ? (
             <div className="text-xs text-rose-600">{bioState.error}</div>
@@ -226,37 +193,6 @@ export default function ResidentProfile() {
             {bioState.loading ? "Saving…" : "Save bio"}
           </button>
         </form>
-        <div className="space-y-3">
-          <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-            Previous requests
-          </div>
-          {requestsState.loading ? (
-            <div className="text-sm text-slate-500">Loading requests…</div>
-          ) : requestsState.error ? (
-            <div className="text-sm text-rose-600">{requestsState.error}</div>
-          ) : requestsState.data.length ? (
-            <div className="space-y-3">
-              {requestsState.data.map((ticket) => (
-                <CardRow
-                  key={ticket._id}
-                  meta={new Date(ticket.createdAt).toLocaleDateString()}
-                  title={ticket.title}
-                  subtitle={ticket.description || "No description provided."}
-                  status={<StatusPill status={ticket.status} />}
-                  right={
-                    <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                      {ticket.priority}
-                    </div>
-                  }
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-slate-500">
-              No previous requests yet.
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

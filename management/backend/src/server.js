@@ -69,6 +69,9 @@ const start = async () => {
 
   io.on("connection", (socket) => {
     const user = socket.data.user;
+    if (user?._id) {
+      socket.join(`user:${user._id}`);
+    }
 
     socket.on("community:join", async ({ buildingId }) => {
       if (!buildingId || !canAccessBuilding(user, buildingId)) return;

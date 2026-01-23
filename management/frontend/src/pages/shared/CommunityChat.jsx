@@ -6,8 +6,11 @@ import SectionHeader from "../../components/SectionHeader";
 import { Button } from "../../components/ui/button";
 
 export default function CommunityChat({ title = "Community chat" }) {
-  const { scope } = useAuth();
-  const buildingId = scope?.buildingId || scope?.buildingIds?.[0];
+  const { scope, activeBuildingId } = useAuth();
+  const buildingId =
+    scope?.role === "management" || scope?.role === "admin"
+      ? activeBuildingId
+      : scope?.buildingId;
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [photo, setPhoto] = useState(null);
@@ -39,9 +42,14 @@ export default function CommunityChat({ title = "Community chat" }) {
     const onMessage = (msg) => {
       setMessages((prev) => [...prev, msg]);
     };
+    const onDelete = (payload) => {
+      setMessages((prev) => prev.filter((msg) => msg._id !== payload?._id));
+    };
     socket.on("community:message", onMessage);
+    socket.on("community:delete", onDelete);
     return () => {
       socket.off("community:message", onMessage);
+      socket.off("community:delete", onDelete);
     };
   }, [buildingId]);
 
@@ -68,6 +76,14 @@ export default function CommunityChat({ title = "Community chat" }) {
     });
   };
 
+  const handleDelete = async (id) => {
+    if (!buildingId) return;
+    if (!confirm("Delete this message?")) return;
+    await apiFetch(withBuildingId(`/api/community/messages/${id}`, buildingId), {
+      method: "DELETE",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -86,20 +102,42 @@ export default function CommunityChat({ title = "Community chat" }) {
           ) : messages.length ? (
             messages.map((msg) => (
               <div key={msg._id} className="rounded-xl bg-slate-50 p-4">
-                <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                  {msg.senderName || "Member"} ·{" "}
-                  {new Date(msg.createdAt).toLocaleString()}
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+                  <span>
+                    {msg.senderName || "Member"} ·{" "}
+                    {new Date(msg.createdAt).toLocaleString()}
+                  </span>
+                  {scope?.role === "management" || scope?.role === "admin" ? (
+                    <button
+                      type="button"
+                      className="text-rose-600"
+                      onClick={() => handleDelete(msg._id)}
+                    >
+                      Delete
+                    </button>
+                  ) : null}
                 </div>
-              <div className="mt-2 text-sm text-slate-700">{msg.body}</div>
-              {msg.attachments?.length ? (
-                <div className="mt-3">
-                  <img
-                    src={msg.attachments[0].url}
-                    alt={msg.attachments[0].fileName || "attachment"}
-                    className="max-h-64 rounded-lg border border-slate-200"
-                  />
-                </div>
-              ) : null}
+                <div className="mt-2 text-sm text-slate-700">{msg.body}</div>
+                {msg.attachments?.length ? (
+                  <div className="mt-3">
+                    {msg.attachments[0].mimeType?.startsWith("image/") ? (
+                      <img
+                        src={msg.attachments[0].url}
+                        alt={msg.attachments[0].fileName || "attachment"}
+                        className="max-h-64 rounded-lg border border-slate-200"
+                      />
+                    ) : (
+                      <a
+                        href={msg.attachments[0].url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-emerald-700 underline"
+                      >
+                        {msg.attachments[0].fileName || "Attachment"}
+                      </a>
+                    )}
+                  </div>
+                ) : null}
               </div>
             ))
           ) : (
@@ -117,7 +155,7 @@ export default function CommunityChat({ title = "Community chat" }) {
           <div className="flex items-center gap-2">
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
               onChange={(e) => setPhoto(e.target.files?.[0] || null)}
               className="text-xs"
             />

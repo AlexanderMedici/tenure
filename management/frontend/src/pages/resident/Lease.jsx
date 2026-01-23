@@ -5,21 +5,25 @@ import { useAuth } from "../../app/auth";
 
 export default function ResidentLease() {
   const { scope } = useAuth();
+  const buildingId = scope?.buildingId;
   const [state, setState] = useState({ loading: true, error: null, data: [] });
 
   useEffect(() => {
     let active = true;
-    apiFetch(withBuildingId("/api/leases", scope?.buildingId))
+    const loadLease = () =>
+      apiFetch(withBuildingId("/api/leases", buildingId))
       .then((data) => {
         if (active) setState({ loading: false, error: null, data: data.data });
       })
       .catch((err) => {
         if (active) setState({ loading: false, error: err.message, data: [] });
       });
+    loadLease();
     return () => {
       active = false;
     };
-  }, [scope?.buildingId]);
+  }, [buildingId]);
+
 
   const lease = state.data[0];
 
@@ -82,6 +86,21 @@ export default function ResidentLease() {
               <div className="text-slate-500">Status</div>
               <div className="text-slate-900">{lease.status}</div>
             </div>
+          </div>
+          <div className="border-t border-slate-100 pt-4 text-sm text-slate-700 space-y-2">
+            <div className="text-slate-500">Lease document (PDF)</div>
+            {lease.document?.url ? (
+              <a
+                className="text-emerald-700 underline"
+                href={lease.document.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View uploaded lease
+              </a>
+            ) : (
+              <div className="text-slate-500">No document uploaded yet.</div>
+            )}
           </div>
         </div>
       ) : (

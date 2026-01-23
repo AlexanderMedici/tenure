@@ -1,6 +1,8 @@
 import express from "express";
 import {
   createInvoice,
+  deleteInvoice,
+  downloadInvoice,
   listInvoices,
   updateInvoice,
 } from "../controllers/invoiceController.js";
@@ -16,6 +18,12 @@ const uploadMiddleware = fileUpload({
 });
 
 router.get("/", protect, listInvoices);
+router.get(
+  "/:id/download",
+  protect,
+  requireRole("management", "admin"),
+  downloadInvoice
+);
 router.post(
   "/",
   protect,
@@ -29,6 +37,12 @@ router.patch(
   requireRole("management", "admin"),
   uploadMiddleware,
   updateInvoice
+);
+router.delete(
+  "/:id",
+  protect,
+  requireRole("management", "admin"),
+  deleteInvoice
 );
 
 export default router;
