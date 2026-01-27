@@ -6,7 +6,6 @@ import { authApi } from "../../app/api";
 const navItems = [
   { to: "/mgmt", label: "Overview" },
   { to: "/mgmt/profile", label: "Profile" },
-  { to: "/mgmt/messages", label: "Messages" },
   { to: "/mgmt/requests", label: "Requests" },
   { to: "/mgmt/announcements", label: "Announcements" },
   { to: "/mgmt/billing", label: "Billing" },

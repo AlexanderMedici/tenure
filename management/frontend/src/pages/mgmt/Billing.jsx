@@ -15,6 +15,7 @@ export default function MgmtBilling() {
     unitId: "",
     leaseId: "",
   });
+  const [leases, setLeases] = useState([]);
   const [files, setFiles] = useState([]);
   const { activeBuildingId } = useAuth();
   const buildingId = activeBuildingId;
@@ -34,11 +35,32 @@ export default function MgmtBilling() {
     };
   }, [buildingId]);
 
+  useEffect(() => {
+    let active = true;
+    if (!buildingId) return () => {};
+    apiFetch(withBuildingId("/api/leases", buildingId))
+      .then((data) => {
+        if (!active) return;
+        const all = data.data || [];
+        const activeLeases = all.filter((lease) => lease.status === "active");
+        setLeases(activeLeases);
+      })
+      .catch(() => {
+        if (active) setLeases([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [buildingId]);
+
   const createInvoice = async (event) => {
     event.preventDefault();
     try {
       if (!buildingId) {
         throw new Error("Select a building to continue.");
+      }
+      if (!form.leaseId || !form.unitId || !form.residentId) {
+        throw new Error("Select an active unit to bill.");
       }
       const formData = new FormData();
       const payload = withBuildingIdBody(form, buildingId);
@@ -131,6 +153,43 @@ export default function MgmtBilling() {
         className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4"
       >
         <div className="grid gap-3 md:grid-cols-3">
+          <div className="md:col-span-3">
+            <label className="text-xs uppercase tracking-[0.2em] text-slate-400">
+              Active unit
+            </label>
+            <select
+              className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+              value={form.leaseId}
+              onChange={(e) => {
+                const lease = leases.find((item) => item._id === e.target.value);
+                if (!lease) {
+                  setForm({ ...form, leaseId: "", unitId: "", residentId: "" });
+                  return;
+                }
+                setForm({
+                  ...form,
+                  leaseId: lease._id,
+                  unitId: lease.unitId?._id || lease.unitId,
+                  residentId: lease.residentId?._id || lease.residentId,
+                });
+              }}
+            >
+              <option value="">Select a unit</option>
+              {leases.map((lease) => {
+                const unitLabel = lease.unitId?.number || lease.unitId || "-";
+                const residentLabel =
+                  lease.residentId?.name ||
+                  lease.residentId?.email ||
+                  lease.residentId ||
+                  "-";
+                return (
+                  <option key={lease._id} value={lease._id}>
+                    {unitLabel} - {residentLabel}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
           <input
             className="rounded-md border border-slate-200 px-3 py-2 text-sm"
             placeholder="Amount"
@@ -144,24 +203,9 @@ export default function MgmtBilling() {
             value={form.dueDate}
             onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
           />
-          <input
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Resident ID"
-            value={form.residentId}
-            onChange={(e) => setForm({ ...form, residentId: e.target.value })}
-          />
-          <input
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Unit ID"
-            value={form.unitId}
-            onChange={(e) => setForm({ ...form, unitId: e.target.value })}
-          />
-          <input
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm"
-            placeholder="Lease ID"
-            value={form.leaseId}
-            onChange={(e) => setForm({ ...form, leaseId: e.target.value })}
-          />
+          <input type="hidden" value={form.residentId} readOnly />
+          <input type="hidden" value={form.unitId} readOnly />
+          <input type="hidden" value={form.leaseId} readOnly />
           <input
             className="rounded-md border border-slate-200 px-3 py-2 text-sm"
             type="file"

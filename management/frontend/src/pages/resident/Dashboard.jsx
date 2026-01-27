@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import SectionHeader from "../../components/SectionHeader";
 import { apiFetch, withBuildingId } from "../../app/api";
 import ListSkeleton from "../../components/ListSkeleton";
@@ -9,20 +10,45 @@ import StatusPill from "../../components/StatusPill";
 export default function ResidentDashboard() {
   const [state, setState] = useState({ loading: true, error: null, data: null });
   const { scope } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     let active = true;
-    apiFetch(withBuildingId("/api/dashboard", scope?.buildingId))
-      .then((data) => {
+    const loadDashboard = async (showLoading = false) => {
+      if (!scope?.buildingId) return;
+      if (showLoading) {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+      }
+      try {
+        const data = await apiFetch(
+          withBuildingId("/api/dashboard", scope.buildingId)
+        );
         if (active) setState({ loading: false, error: null, data: data.data });
-      })
-      .catch((err) => {
-        if (active) setState({ loading: false, error: err.message, data: null });
-      });
+      } catch (err) {
+        if (active) {
+          setState({ loading: false, error: err.message, data: null });
+        }
+      }
+    };
+
+    loadDashboard(true);
+    const intervalId = setInterval(() => {
+      loadDashboard(false);
+    }, 30000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadDashboard(false);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
       active = false;
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [scope?.buildingId]);
 
   return (
     <div className="space-y-6">
@@ -41,14 +67,15 @@ export default function ResidentDashboard() {
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             {[
-              { label: "Announcements", value: state.data?.announcements },
-              { label: "Threads", value: state.data?.threads },
-              { label: "Open Tickets", value: state.data?.openTickets },
-              { label: "Open Invoices", value: state.data?.openInvoices },
+              { label: "Announcements", value: state.data?.announcements, to: "/announcements" },
+              { label: "Open Tickets", value: state.data?.openTickets, to: "/requests" },
+              { label: "Open Invoices", value: state.data?.openInvoices, to: "/payments" },
             ].map((metric) => (
               <div
                 key={metric.label}
-                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(36,34,30,0.06)]"
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_12px_30px_rgba(36,34,30,0.06)] transition hover:border-slate-300 hover:shadow-[0_16px_36px_rgba(36,34,30,0.08)] cursor-pointer"
+                onClick={() => navigate(metric.to)}
+                role="button"
               >
                 <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
                   {metric.label}

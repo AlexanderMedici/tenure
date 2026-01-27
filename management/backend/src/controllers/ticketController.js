@@ -26,9 +26,14 @@ export const listTickets = async (req, res, next) => {
       action: "list_tickets",
       residentField: "residentId",
       unitField: "unitId",
-      leaseField: "residentId",
+      residentScoped: false,
     });
-    const tickets = await Ticket.find(filter).sort({ createdAt: -1 });
+    if (req.user?.role === "resident") {
+      filter.residentId = req.user._id;
+    }
+    const tickets = await Ticket.find(filter)
+      .populate("unitId", "number")
+      .sort({ createdAt: -1 });
     res.json({ success: true, data: tickets });
   } catch (err) {
     next(err);
@@ -214,6 +219,52 @@ export const deleteTicket = async (req, res, next) => {
     const ticket = await Ticket.findOneAndDelete({ _id: id, ...filter });
     if (!ticket) throw httpError(404, "Ticket not found");
     res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listTicketMessages = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const filter = await tenantScope(req, {}, {
+      action: "list_ticket_messages",
+      residentScoped: false,
+    });
+    if (req.user?.role === "resident") {
+      filter.residentId = req.user._id;
+    }
+    const ticket = await Ticket.findOne({ _id: id, ...filter });
+    if (!ticket) throw httpError(404, "Ticket not found");
+    res.json({ success: true, data: ticket.messages || [] });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const createTicketMessage = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { body } = req.body || {};
+    if (!body) throw httpError(400, "Message body required");
+    const filter = await tenantScope(req, {}, {
+      action: "create_ticket_message",
+      residentScoped: false,
+    });
+    if (req.user?.role === "resident") {
+      filter.residentId = req.user._id;
+    }
+    const ticket = await Ticket.findOne({ _id: id, ...filter });
+    if (!ticket) throw httpError(404, "Ticket not found");
+    const message = {
+      senderId: req.user?._id,
+      senderRole: req.user?.role,
+      body: String(body).trim(),
+      createdAt: new Date(),
+    };
+    ticket.messages = [...(ticket.messages || []), message];
+    await ticket.save();
+    res.status(201).json({ success: true, data: message });
   } catch (err) {
     next(err);
   }

@@ -1,7 +1,9 @@
 import express from "express";
 import {
   createLease,
+  deleteLease,
   listLeases,
+  terminateLease,
   uploadLeaseDocument,
 } from "../controllers/leaseController.js";
 import { protect } from "../middleware/protect.js";
@@ -19,5 +21,12 @@ router.post(
   uploadLeaseDocumentFile.single("document"),
   uploadLeaseDocument
 );
+router.patch(
+  "/:id/terminate",
+  protect,
+  requireRole("management", "admin"),
+  terminateLease
+);
+router.delete("/:id", protect, requireRole("management", "admin"), deleteLease);
 
 export default router;

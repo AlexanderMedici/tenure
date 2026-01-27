@@ -3,6 +3,8 @@ import {
   createTicket,
   deleteTicket,
   listTickets,
+  listTicketMessages,
+  createTicketMessage,
   updateTicket,
 } from "../controllers/ticketController.js";
 import { protect } from "../middleware/protect.js";
@@ -20,6 +22,8 @@ router.patch(
   uploadTicketCompletion.array("completionFiles", 3),
   updateTicket
 );
+router.get("/:id/messages", protect, listTicketMessages);
+router.post("/:id/messages", protect, createTicketMessage);
 router.delete(
   "/:id",
   protect,

@@ -8,10 +8,12 @@ const parseBody = async (res) => {
 };
 
 export const apiFetch = async (path, options = {}) => {
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
   const res = await fetch(path, {
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(options.headers || {}),
     },
     ...options,

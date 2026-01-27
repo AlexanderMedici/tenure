@@ -25,14 +25,10 @@ export default function AdminConsole() {
     residents: [],
   });
   const [exportForm, setExportForm] = useState({
-    threadId: "",
     communityFormat: "pdf",
-    threadFormat: "pdf",
   });
   const [deleteForm, setDeleteForm] = useState({
     communityMessageId: "",
-    threadId: "",
-    threadMessageId: "",
   });
 
   const canFetch = useMemo(() => Boolean(buildingId), [buildingId]);
@@ -100,23 +96,6 @@ export default function AdminConsole() {
         deleteForm.communityMessageId
       );
       setDeleteForm((prev) => ({ ...prev, communityMessageId: "" }));
-    } catch (err) {
-      setState((prev) => ({ ...prev, error: err.message }));
-    }
-  };
-
-  const deleteThreadMessage = async () => {
-    try {
-      await adminApi.deleteThreadMessage(
-        buildingId,
-        deleteForm.threadId,
-        deleteForm.threadMessageId
-      );
-      setDeleteForm((prev) => ({
-        ...prev,
-        threadId: "",
-        threadMessageId: "",
-      }));
     } catch (err) {
       setState((prev) => ({ ...prev, error: err.message }));
     }
@@ -283,51 +262,6 @@ export default function AdminConsole() {
               Download community
             </Button>
           </div>
-
-          <div className="space-y-3">
-            <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-              Thread export
-            </div>
-            <input
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm"
-              placeholder="Thread ID"
-              value={exportForm.threadId}
-              onChange={(e) =>
-                setExportForm((prev) => ({
-                  ...prev,
-                  threadId: e.target.value,
-                }))
-              }
-            />
-            <select
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm"
-              value={exportForm.threadFormat}
-              onChange={(e) =>
-                setExportForm((prev) => ({
-                  ...prev,
-                  threadFormat: e.target.value,
-                }))
-              }
-            >
-              <option value="pdf">PDF</option>
-              <option value="docx">DOCX</option>
-            </select>
-            <Button
-              onClick={() =>
-                window.open(
-                  adminExportUrl(
-                    `/api/admin/exports/threads/${exportForm.threadId}`,
-                    buildingId,
-                    exportForm.threadFormat
-                  ),
-                  "_blank"
-                )
-              }
-              disabled={!exportForm.threadId}
-            >
-              Download thread
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -355,38 +289,6 @@ export default function AdminConsole() {
               disabled={!deleteForm.communityMessageId}
             >
               Delete message
-            </Button>
-          </div>
-
-          <div className="space-y-3">
-            <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
-              Thread message
-            </div>
-            <input
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm"
-              placeholder="Thread ID"
-              value={deleteForm.threadId}
-              onChange={(e) =>
-                setDeleteForm((prev) => ({ ...prev, threadId: e.target.value }))
-              }
-            />
-            <input
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm"
-              placeholder="Message ID"
-              value={deleteForm.threadMessageId}
-              onChange={(e) =>
-                setDeleteForm((prev) => ({
-                  ...prev,
-                  threadMessageId: e.target.value,
-                }))
-              }
-            />
-            <Button
-              variant="outline"
-              onClick={deleteThreadMessage}
-              disabled={!deleteForm.threadId || !deleteForm.threadMessageId}
-            >
-              Delete thread message
             </Button>
           </div>
         </div>

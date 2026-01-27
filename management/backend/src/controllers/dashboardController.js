@@ -13,7 +13,7 @@ export const getDashboard = async (req, res, next) => {
 
     const residentFilter =
       req.user.role === "resident"
-        ? await tenantScope(req, {}, { action: "dashboard_resident" })
+        ? { ...buildingFilter, residentId: req.user._id }
         : buildingFilter;
 
     const announcementsFilter = { ...buildingFilter };

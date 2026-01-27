@@ -1,3 +1,5 @@
+import fs from "fs/promises";
+import path from "path";
 import User from "../models/User.js";
 import { tenantScope } from "../middleware/tenantScope.js";
 import { fileToPublicPath } from "../config/multer.js";
@@ -6,6 +8,20 @@ const httpError = (status, message) => {
   const err = new Error(message);
   err.status = status;
   return err;
+};
+
+const deleteUploadByUrl = async (url) => {
+  if (!url || typeof url !== "string") return;
+  if (!url.startsWith("/uploads/")) return;
+  const relative = url.replace("/uploads/", "");
+  const fullPath = path.resolve(process.cwd(), "uploads", relative);
+  try {
+    await fs.unlink(fullPath);
+  } catch (err) {
+    if (err?.code !== "ENOENT") {
+      throw err;
+    }
+  }
 };
 
 export const createUser = async (req, res, next) => {
@@ -53,6 +69,10 @@ export const uploadProfilePhoto = async (req, res, next) => {
 
     const user = await User.findById(req.user._id).select("-password");
     if (!user) throw httpError(404, "User not found");
+
+    if (user.profilePhoto?.url) {
+      await deleteUploadByUrl(user.profilePhoto.url);
+    }
 
     user.profilePhoto = {
       url: fileToPublicPath(req.file),

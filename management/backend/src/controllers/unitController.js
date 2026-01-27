@@ -29,3 +29,16 @@ export const createUnit = async (req, res, next) => {
     next(err);
   }
 };
+
+export const listUnits = async (req, res, next) => {
+  try {
+    const filter = await tenantScope(req, {}, {
+      action: "list_units",
+      residentScoped: false,
+    });
+    const units = await Unit.find(filter).sort({ number: 1 });
+    res.json({ success: true, data: units });
+  } catch (err) {
+    next(err);
+  }
+};

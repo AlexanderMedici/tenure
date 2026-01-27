@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../app/auth";
 import SectionHeader from "../../components/SectionHeader";
 
@@ -29,9 +29,10 @@ export default function MgmtProfile() {
     setBio(user?.bio || "");
   }, [user?.bio]);
 
-  const handleUpload = async (event) => {
-    event.preventDefault();
-    if (!file) {
+  const fileInputRef = useRef(null);
+
+  const uploadPhoto = async (selectedFile) => {
+    if (!selectedFile) {
       setUploadState({
         loading: false,
         error: "Select an image to upload.",
@@ -43,7 +44,7 @@ export default function MgmtProfile() {
     setUploadState({ loading: true, error: null, success: null });
     try {
       const formData = new FormData();
-      formData.append("photo", file);
+      formData.append("photo", selectedFile);
       const res = await fetch("/api/users/me/photo", {
         method: "POST",
         credentials: "include",
@@ -65,6 +66,9 @@ export default function MgmtProfile() {
         success: "Profile photo updated.",
       });
       setFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       await refresh();
     } catch (err) {
       setUploadState({
@@ -125,14 +129,20 @@ export default function MgmtProfile() {
               {initials}
             </div>
           )}
-          <form onSubmit={handleUpload} className="space-y-2">
+          <form className="space-y-2">
             <div className="text-xs uppercase tracking-[0.2em] text-slate-400">
               Profile photo
             </div>
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="sr-only"
+              onChange={(e) => {
+                const selected = e.target.files?.[0] || null;
+                setFile(selected);
+                uploadPhoto(selected);
+              }}
             />
             {uploadState.error ? (
               <div className="text-xs text-rose-600">{uploadState.error}</div>
@@ -142,9 +152,15 @@ export default function MgmtProfile() {
               </div>
             ) : null}
             <button
-              type="submit"
+              type="button"
               disabled={uploadState.loading}
               className="rounded-full bg-slate-900 px-4 py-2 text-xs text-white disabled:opacity-60"
+              onClick={() => {
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = "";
+                  fileInputRef.current.click();
+                }
+              }}
             >
               {uploadState.loading ? "Uploading…" : "Upload photo"}
             </button>

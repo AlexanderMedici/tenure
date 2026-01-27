@@ -21,10 +21,11 @@ export const listThreads = async (req, res, next) => {
   try {
     const filter = await tenantScope(req, {}, {
       action: "list_threads",
-      residentField: "residentId",
-      unitField: "unitId",
-      leaseField: "residentId",
+      residentScoped: false,
     });
+    if (req.user?.role === "resident") {
+      filter.residentId = req.user._id;
+    }
     const threads = await Thread.find(filter).sort({
       lastMessageAt: -1,
       updatedAt: -1,
@@ -39,10 +40,11 @@ export const listThreadMessages = async (req, res, next) => {
   try {
     const threadFilter = await tenantScope(req, {}, {
       action: "list_thread_messages",
-      residentField: "residentId",
-      unitField: "unitId",
-      leaseField: "residentId",
+      residentScoped: false,
     });
+    if (req.user?.role === "resident") {
+      threadFilter.residentId = req.user._id;
+    }
 
     const thread = await Thread.findOne({
       _id: req.params.id,
@@ -68,10 +70,11 @@ export const createThreadMessage = async (req, res, next) => {
 
     const threadFilter = await tenantScope(req, {}, {
       action: "create_thread_message",
-      residentField: "residentId",
-      unitField: "unitId",
-      leaseField: "residentId",
+      residentScoped: false,
     });
+    if (req.user?.role === "resident") {
+      threadFilter.residentId = req.user._id;
+    }
 
     const thread = await Thread.findOne({
       _id: req.params.id,

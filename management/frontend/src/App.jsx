@@ -7,8 +7,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import ResidentDashboard from "./pages/resident/Dashboard";
-import ResidentMessages from "./pages/resident/Messages";
-import ResidentMessageThread from "./pages/resident/MessageThread";
+
 import ResidentPayments from "./pages/resident/Payments";
 import ResidentRequests from "./pages/resident/Requests";
 import ResidentRequestNew from "./pages/resident/RequestNew";
@@ -17,7 +16,7 @@ import ResidentProfile from "./pages/resident/Profile";
 import ResidentCommunity from "./pages/resident/Community";
 import ResidentLease from "./pages/resident/Lease";
 import MgmtOverview from "./pages/mgmt/Overview";
-import MgmtMessages from "./pages/mgmt/Messages";
+
 import MgmtRequests from "./pages/mgmt/Requests";
 import MgmtAnnouncements from "./pages/mgmt/Announcements";
 import AnnouncementNew from "./pages/mgmt/AnnouncementNew";
@@ -48,11 +47,7 @@ export default function App() {
             }
           >
             <Route path="/dashboard" element={<ResidentDashboard />} />
-            <Route path="/messages" element={<ResidentMessages />} />
-            <Route
-              path="/messages/:threadId"
-              element={<ResidentMessageThread />}
-            />
+
             <Route path="/payments" element={<ResidentPayments />} />
             <Route path="/requests" element={<ResidentRequests />} />
             <Route path="/requests/new" element={<ResidentRequestNew />} />
@@ -70,7 +65,7 @@ export default function App() {
             }
           >
             <Route path="/mgmt" element={<MgmtOverview />} />
-            <Route path="/mgmt/messages" element={<MgmtMessages />} />
+
             <Route path="/mgmt/requests" element={<MgmtRequests />} />
             <Route path="/mgmt/announcements" element={<MgmtAnnouncements />} />
             <Route path="/mgmt/announcements/new" element={<AnnouncementNew />} />

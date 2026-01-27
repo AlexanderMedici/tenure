@@ -5,7 +5,6 @@ import { useAuth } from "../../app/auth";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard" },
-  { to: "/messages", label: "Messages" },
   { to: "/payments", label: "Payments" },
   { to: "/lease", label: "Lease" },
   { to: "/requests", label: "Requests" },

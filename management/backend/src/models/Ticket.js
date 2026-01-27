@@ -10,6 +10,16 @@ const attachmentSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const messageSchema = new mongoose.Schema(
+  {
+    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    senderRole: { type: String },
+    body: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const ticketSchema = new mongoose.Schema(
   {
     buildingId: { type: String, required: true, index: true },
@@ -32,6 +42,7 @@ const ticketSchema = new mongoose.Schema(
       index: true,
     },
     attachments: [attachmentSchema],
+    messages: [messageSchema],
     completionNotes: { type: String },
     completionAttachments: [attachmentSchema],
     completedAt: { type: Date },

@@ -13,6 +13,9 @@ const leaseSchema = new mongoose.Schema(
       default: "pending",
       index: true,
     },
+    terminationReason: { type: String },
+    terminatedAt: { type: Date },
+    terminatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     rentAmount: { type: Number },
     currency: { type: String, default: "USD" },
     document: {
