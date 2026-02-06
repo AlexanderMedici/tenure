@@ -24,10 +24,14 @@ const signToken = (user) =>
 const cookieOptions = () => {
   const isProd = process.env.NODE_ENV === "production";
   const days = Number(process.env.COOKIE_EXPIRES_DAYS || 7);
+  const sameSite =
+    process.env.COOKIE_SAMESITE || (isProd ? "none" : "lax");
+  const secure =
+    process.env.COOKIE_SECURE === "true" || (sameSite === "none" ? true : isProd);
   return {
     httpOnly: true,
-    sameSite: "lax",
-    secure: isProd,
+    sameSite,
+    secure,
     maxAge: days * 24 * 60 * 60 * 1000,
   };
 };
@@ -56,7 +60,11 @@ export const login = async (req, res, next) => {
 export const logout = async (_req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite:
+      process.env.COOKIE_SAMESITE || (process.env.NODE_ENV === "production" ? "none" : "lax"),
+    secure:
+      process.env.COOKIE_SECURE === "true" ||
+      (process.env.NODE_ENV === "production" ? true : false),
   });
   res.json({ success: true, data: { status: "ok" } });
 };

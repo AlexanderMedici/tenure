@@ -12,6 +12,11 @@ import CommunityMessage from "./models/CommunityMessage.js";
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || "";
+const rawOrigins = process.env.CLIENT_URL || "http://localhost:5173";
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const canAccessBuilding = (user, buildingId) => {
   if (user.role === "admin") return true;
@@ -45,7 +50,7 @@ const start = async () => {
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
+      origin: allowedOrigins,
       credentials: true,
     },
   });

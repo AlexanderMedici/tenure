@@ -1,3 +1,10 @@
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+const toApiUrl = (path) => {
+  if (!API_BASE) return path;
+  return `${API_BASE}${path}`;
+};
+
 const parseBody = async (res) => {
   const contentType = res.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
@@ -10,7 +17,7 @@ const parseBody = async (res) => {
 export const apiFetch = async (path, options = {}) => {
   const isFormData =
     typeof FormData !== "undefined" && options.body instanceof FormData;
-  const res = await fetch(path, {
+  const res = await fetch(toApiUrl(path), {
     credentials: "include",
     headers: {
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
@@ -80,9 +87,10 @@ export const adminApi = {
 
 export const adminExportUrl = (path, buildingId, format = "pdf") => {
   const joiner = path.includes("?") ? "&" : "?";
-  return `${path}${joiner}buildingId=${encodeURIComponent(
+  const url = `${path}${joiner}buildingId=${encodeURIComponent(
     buildingId || ""
   )}&format=${encodeURIComponent(format)}`;
+  return toApiUrl(url);
 };
 
 export const serviceAgentApi = {

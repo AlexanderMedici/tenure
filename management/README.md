@@ -78,6 +78,9 @@ MONGO_URI=your_mongodb_uri
 JWT_SECRET=your_secret
 JWT_EXPIRES_IN=7d
 COOKIE_EXPIRES_DAYS=7
+CLIENT_URL=http://localhost:5173
+COOKIE_SAMESITE=lax
+COOKIE_SECURE=false
 SMTP_FROM="TENURE <no-reply@tenure.local>"
 ```
 
@@ -130,3 +133,18 @@ Backend:
 - Socket.IO uses the same httpOnly cookie for auth.
 - All tenant data is scoped by `buildingId`.
 
+## Render Deployment
+
+This repo is a monorepo with a Node API and Vite frontend. Use the `render.yaml` blueprint at repo root.
+
+Backend (Web Service):
+- Root directory: `backend`
+- Build command: `npm install`
+- Start command: `npm run start`
+- Env vars: `MONGO_URI`, `JWT_SECRET`, `CLIENT_URL`, `COOKIE_SAMESITE=none`, `COOKIE_SECURE=true`
+
+Frontend (Static Site):
+- Root directory: `frontend`
+- Build command: `npm install && npm run build`
+- Publish directory: `dist`
+- Env vars: `VITE_API_URL` and `VITE_SOCKET_URL` set to your backend URL

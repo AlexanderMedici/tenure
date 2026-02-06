@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import path from "path";
 import cookieParser from "cookie-parser";
 import { protect } from "./middleware/protect.js";
@@ -19,6 +20,25 @@ import communityRoutes from "./routes/communityRoutes.js";
 import exportRoutes from "./routes/exportRoutes.js";
 
 const app = express();
+
+app.set("trust proxy", 1);
+
+const rawOrigins = process.env.CLIENT_URL || "http://localhost:5173";
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
