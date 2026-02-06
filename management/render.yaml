@@ -28,9 +28,8 @@ services:
         value: "TENURE <no-reply@tenure.local>"
   - type: static
     name: tenure-web
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
+    buildCommand: npm install && npm --prefix frontend install && npm --prefix frontend run build
+    staticPublishPath: frontend/dist
     envVars:
       - key: VITE_API_URL
         value: https://YOUR-API-SERVICE.onrender.com
